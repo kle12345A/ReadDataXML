@@ -1,42 +1,61 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model IEnumerable<ReadXML.Models.Xmldatum>
+<h2>Danh sách sách</h2>
+
+@if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        @ViewBag.ErrorMessage
+    </div>
 }
 
-<h2>Upload XML File</h2>
-
-<form id="uploadForm" action="/Home/ReadXML" method="post" enctype="multipart/form-data">
-    <div class="form-group mb-3">
-        <label for="file" class="form-label">Choose an XML file to upload:</label>
-        <input type="file" id="file" name="file" class="form-control" accept=".xml" required />
+@if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+{
+    <div class="alert alert-success">
+        @ViewBag.SuccessMessage
     </div>
-    <button type="submit" class="btn btn-primary">Preview Data</button>
+}
+
+<form asp-action="ReadXML" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="file">Chọn file XML:</label>
+        <input type="file" name="file" class="form-control" accept=".xml" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Preview data</button>
 </form>
 
-@if (ViewBag.XmlData != null && ViewBag.XmlRaw != null)
+@if (Model != null && Model.Any())
 {
-    <div class="mt-4">
-        <h3>Preview Data</h3>
-        <form action="/Home/SaveToDatabase" method="post">
-            <input type="hidden" name="xmlData" value="@Html.Raw(ViewBag.XmlRaw)" />
-            <table class="table">
-                <thead>
+    <form asp-action="SaveToDatabase" method="post">
+        <input type="hidden" name="xmlData" value="@ViewBag.XmlRaw" />
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Author</th>
+                    <th>Title</th>
+                    <th>Genre</th>
+                    <th>Price</th>
+                    <th>Publish Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var book in Model)
+                {
                     <tr>
-                        <th>Data</th>
+                        <td>@(book.Author ?? "N/A")</td>
+                        <td>@(book.Title ?? "N/A")</td>
+                        <td>@(book.Genre ?? "N/A")</td>
+                        <td>@(book.Price.HasValue ? book.Price.Value.ToString("C") : "N/A")</td>
+                        <td>@(book.PublishDate.HasValue ? book.PublishDate.Value.ToString("yyyy-MM-dd") : "N/A")</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in ViewBag.XmlData)
-                    {
-                        <tr>
-                            <td>@item</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <button type="submit" class="btn btn-success">Save to Database</button>
-        </form>
+                }
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-success">Save to Database</button>
+    </form>
+}
+else
+{
+    <div class="alert alert-info">
+        Không có dữ liệu sách để hiển thị.
     </div>
 }
-
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
