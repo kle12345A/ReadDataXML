@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ReadXML.Models;
-using System.Diagnostics;
-using System.Xml.Linq;
-using System.Text;
+using HelpReadFile;
+using System.Reflection;
+using System.Dynamic;
+using Microsoft.EntityFrameworkCore;
 using System.Xml;
 
 namespace ReadXML.Controllers
@@ -11,27 +12,23 @@ namespace ReadXML.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ReadXMLContext _context;
+        private readonly IReadFileService _readFileService;
 
-        public HomeController(ILogger<HomeController> logger, ReadXMLContext context)
+        public HomeController(ILogger<HomeController> logger, ReadXMLContext context, HelpReadFile.IReadFileService readFileService)
         {
             _logger = logger;
             _context = context;
+            _readFileService = readFileService;
         }
 
         public IActionResult Index()
         {
-            return View(new List<Xmldatum>());
+            return View(new List<Person>());
         }
 
         public IActionResult Privacy()
         {
             return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
         [HttpPost]
@@ -41,29 +38,22 @@ namespace ReadXML.Controllers
             {
                 if (file == null || file.Length == 0)
                 {
-                    ViewBag.ErrorMessage = "Please select a file to upload.";
-                    return View("Index", new List<Xmldatum>());
+                    ViewBag.ErrorMessage = "Vui lòng chọn file để tải lên.";
+                    return View("Index", new List<Person>());
                 }
 
-                using var stream = file.OpenReadStream();
-                var xmlDoc = XDocument.Load(stream);
-                ViewBag.XmlRaw = xmlDoc.ToString();
+                // Đọc nội dung file
+                using var reader = new StreamReader(file.OpenReadStream());
+                string xmlContent = reader.ReadToEnd();
+                ViewBag.XmlRaw = xmlContent;
 
-                var bookElements = xmlDoc.Descendants("book").Select(b => new Xmldatum
-                {
-                    Author = b.Element("author")?.Value?.Trim(),
-                    Title = b.Element("title")?.Value?.Trim(),
-                    Genre = b.Element("genre")?.Value?.Trim(),
-                    Price = double.TryParse(b.Element("price")?.Value?.Trim(), out var price) ? price : (double?)null,
-                    PublishDate = DateTime.TryParse(b.Element("publish_date")?.Value?.Trim(), out var date) ? date : (DateTime?)null
-                }).ToList();
-
-                return View("Index", bookElements);
+                var xmlData = _readFileService.ConvertXmlToObject<Person>(xmlContent);
+                return View("Index", xmlData);
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = "Error" + ex.Message;
-                return View("Index", new List<Xmldatum>());
+                ViewBag.ErrorMessage = "Lỗi: " + ex.Message;
+                return View("Index");
             }
         }
 
@@ -72,31 +62,35 @@ namespace ReadXML.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(xmlData))
-                {
-                    ViewBag.ErrorMessage = "No data to save.";
-                    return View("Index", new List<Xmldatum>());
-                }
+               
+                var xmldataList = _readFileService.ConvertXmlToObject<Xmldatum>(xmlData);
+                _context.Xmldata.AddRange(xmldataList);
+                _context.SaveChanges();
 
-                var xmlDoc = XDocument.Parse(xmlData);
-                var bookElements = xmlDoc.Descendants("book").Select(b => new Xmldatum
-                {
-                    Author = b.Element("author")?.Value?.Trim(),
-                    Title = b.Element("title")?.Value?.Trim(),
-                    Genre = b.Element("genre")?.Value?.Trim(),
-                    Price = double.TryParse(b.Element("price")?.Value?.Trim(), out var price) ? price : (double?)null,
-                    PublishDate = DateTime.TryParse(b.Element("publish_date")?.Value?.Trim(), out var date) ? date : (DateTime?)null
-                }).ToList();
-                _context.Xmldata.AddRange(bookElements);
-                var result = _context.SaveChanges();
-                ViewBag.SuccessMessage = "Insert successfull";
-
+                ViewBag.SuccessMessage = "Lưu dữ liệu thành công";
                 return View("Index");
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = "Error saving to database";
-                return View("Index", new List<Xmldatum>());
+                ViewBag.ErrorMessage = "Lỗi:" + ex.Message;
+                return View("Index");
+            }
+        }
+
+        [HttpGet]
+        public IActionResult GenerateSampleXml()
+        {
+            try
+            {
+                var sampleObject = new Person();
+                string sampleXml = _readFileService.GenerateSampleXml(sampleObject);
+                byte[] bytes = System.Text.Encoding.UTF8.GetBytes(sampleXml);
+                return File(bytes, "application/xml", "sample.xml");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Lỗi:" + ex.Message;
+                return View("Index");
             }
         }
     }

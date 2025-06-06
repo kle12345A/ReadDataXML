@@ -1,12 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using ReadXML.Models;
+using HelpReadFile;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add DbContext
 builder.Services.AddDbContext<ReadXMLContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyContr")));
+
+// Add ReadFileService
+builder.Services.AddScoped<IReadFileService, ReadFileService>();
 
 var app = builder.Build();
 

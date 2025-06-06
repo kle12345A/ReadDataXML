@@ -19,4 +19,8 @@
     <PackageReference Include="OpenXmlLibrary" Version="1.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\HelpReadFile\HelpReadFile.csproj" />
+  </ItemGroup>
+
 </Project>

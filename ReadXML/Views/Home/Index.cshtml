@@ -1,66 +1,77 @@
-﻿@model IEnumerable<ReadXML.Models.Xmldatum>
-<h2>Danh sách sách</h2>
+﻿@model List<ReadXML.Models.Person>
 
-@if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">XML Reader</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+        {
+            <div class="alert alert-success">
+                @ViewBag.SuccessMessage
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+        {
+            <div class="alert alert-danger">
+                @ViewBag.ErrorMessage
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Upload XML File</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" asp-action="ReadXML">
+                    <div class="form-group">
+                        <input type="file" name="file" class="form-control" accept=".xml" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Upload and Read</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Generate Sample XML</h5>
+            </div>
+            <div class="card-body">
+                <p>Click the button below to download a sample XML file.</p>
+                <a href="@Url.Action("GenerateSampleXml", "Home")" class="btn btn-success">Download Sample XML</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(ViewBag.XmlRaw))
 {
-    <div class="alert alert-danger">
-        @ViewBag.ErrorMessage
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>XML Data</h5>
+                </div>
+                <div class="card-body">
+                    <pre>@ViewBag.XmlRaw</pre>
+                    <form method="post" asp-action="SaveToDatabase">
+                        <input type="hidden" name="xmlData" value="@ViewBag.XmlRaw" />
+                        <button type="submit" class="btn btn-success mt-3">Save to Database</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
-@if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
-{
-    <div class="alert alert-success">
-        @ViewBag.SuccessMessage
-    </div>
-}
-
-<form asp-action="ReadXML" method="post" enctype="multipart/form-data">
-    <div class="form-group">
-        <label for="file">Chọn file XML:</label>
-        <input type="file" name="file" class="form-control" accept=".xml" required />
-    </div>
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary">Preview data</button>
-
-    </div>
-
-   
-</form>
-
-@if (Model != null && Model.Any())
-{
-    <form asp-action="SaveToDatabase" method="post">
-        <input type="hidden" name="xmlData" value="@ViewBag.XmlRaw" />
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Author</th>
-                    <th>Title</th>
-                    <th>Genre</th>
-                    <th>Price</th>
-                    <th>Publish Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var book in Model)
-                {
-                    <tr>
-                        <td>@(book.Author ?? "N/A")</td>
-                        <td>@(book.Title ?? "N/A")</td>
-                        <td>@(book.Genre ?? "N/A")</td>
-                        <td>@(book.Price.HasValue ? book.Price.Value.ToString("C") : "N/A")</td>
-                        <td>@(book.PublishDate.HasValue ? book.PublishDate.Value.ToString("yyyy-MM-dd") : "N/A")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        <button type="submit" class="btn btn-success">Save to Database</button>
-    </form>
-}
-else
-{
-    <div class="alert alert-info">
-        Không có dữ liệu sách để hiển thị.
-    </div>
-}

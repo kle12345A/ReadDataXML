@@ -16,7 +16,7 @@ namespace ReadXML.Models
         {
         }
 
-        public virtual DbSet<Xmldatum> Xmldata { get; set; } = null!;
+        public virtual DbSet<Xmldatum>  Xmldata { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
